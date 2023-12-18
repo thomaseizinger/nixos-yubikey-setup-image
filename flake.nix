@@ -2,7 +2,7 @@
   description = "A Nix Flake for a GNOME-based system with YubiKey setup";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
     drduhYubiKeyGuide.url = "github:drduh/YubiKey-Guide";
     drduhYubiKeyGuide.flake = false;
     drduhConfig.url = "github:drduh/config";
@@ -49,33 +49,19 @@
             in
             {
               nixpkgs.overlays = [
-                # hopenpgp-tools in nixpkgs 23.05 is out-of-date and has a broken build
+                # waiting for https://github.com/NixOS/nixpkgs/pull/275209
+                # to be merged & backported to 23.11
                 (final: prev: {
                   haskellPackages = prev.haskellPackages.override {
                     overrides = hsFinal: hsPrev:
                       let
-                        optparse-applicative =
-                          final.haskell.lib.overrideCabal hsPrev.optparse-applicative
-                            (oldAttrs: {
-                              version = "0.18.1.0";
-                              sha256 =
-                                "sha256-Y4EatP0m6Cm4hoNkMlqIvjrMeYGfW7UAWy3TuWHsxJE=";
-                              libraryHaskellDepends =
-                                (oldAttrs.libraryHaskellDepends or [ ])
-                                ++ (with hsFinal; [
-                                  text
-                                  prettyprinter
-                                  prettyprinter-ansi-terminal
-                                ]);
-                            });
                         hopenpgp-tools =
                           (final.haskell.lib.overrideCabal hsPrev.hopenpgp-tools
                             (oldAttrs: {
-                              version = "0.23.8";
-                              sha256 =
-                                "sha256-FYvlVE0o/LOYk3a2rucAqm7tg5D/uNQRRrCu/wlDNAE=";
                               broken = false;
-                            })).override { inherit optparse-applicative; };
+                            })).override {
+                              optparse-applicative = hsPrev.optparse-applicative_0_18_1_0;
+                            };
                       in
                       { inherit hopenpgp-tools; };
                   };
